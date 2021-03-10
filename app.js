@@ -1,22 +1,16 @@
-const express = require('express');
+var express = require('express'); 
+var app = express(); 
+var bodyParser = require('body-parser');
 
-const app = express();
+app.use(bodyParser.json());  
 
-require('dotenv').config();
-require('./setup/initialize')(app);
+/** API path that will upload the files */
 require('./setup/routes')(app);
-require('./setup/database')();
 
-process.on('uncaughtException', (err) => {
-    console.log(err)
+app.get('/',function(req,res){
+    res.sendFile(__dirname + "/index.html");
 });
 
-process.on('unhandledRejection', (err) => {
-    console.log(err)
+app.listen('8000', function(){
+    console.log('running on 8000...');
 });
-
-app.listen(process.env.APP_PORT, () => {
-    console.log(`Listening to requests on http://127.0.0.1:${process.env.APP_PORT}`);
-});
-
-module.exports = app;

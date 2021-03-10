@@ -1,10 +1,10 @@
 require('express-async-errors');
-const UserRouter = require('../app/users/userAPI');
+const KeycloakRouter = require('../app/keycloak/keycloakAPI');
 const requestNotFound = require('../middlewares/requestNotFound');
 const error = require('../middlewares/error');
 
 module.exports = (app) => {
-    app.use('/api/users', UserRouter);
+    app.use('/api', KeycloakRouter);
     app.use(requestNotFound);
     app.use(error);
 }
