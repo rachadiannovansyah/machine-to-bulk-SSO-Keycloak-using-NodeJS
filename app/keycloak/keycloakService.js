@@ -86,7 +86,7 @@ exports.bulk = async (req, res) => {
                     enabled: true,
                     username: element.email.trim(),
                     attributes: {
-                        'city_code': '32.76',
+                        'city_code': '32.16',
                         'province_code': '32',
                         'position_title': 'Relawan Puspa'
                     }
@@ -101,28 +101,6 @@ exports.bulk = async (req, res) => {
                 await axios.put(createUser.headers.location + '/reset-password', bodyCredentials, option);
                 await axios.put(createUser.headers.location + '/groups/7eccdad3-1d79-4eac-88da-9c4c1f73cd09', null, option);
             });
-            
-            // const storeUser = await result.map(async (element) => {
-            //     let body = {
-            //         firstName: element.firstname,
-            //         lastName: element.lastname,
-            //         email: element.email,
-            //         enabled: element.usernabled,
-            //         username: element.email
-            //     };
-
-            //     const createUser = await axios.post(`${endpoint}/auth/admin/realms/jabarprov/users`, body, option);
-            //     console.log(createUser.headers.location + '/reset-password');
-            //     // return true;
-
-            //     // let bodyCredentials = {
-            //     //     type: 'password',
-            //     //     temporary: 'true',
-            //     //     value: 'jabarjuara'
-            //     // };
-            //     // await axios.post(createUser.headers.location + '/reset-password', bodyCredentials, option);
-            // });
-            // await Promise.all(storeUser);
 
             res.json({ message: 'Success bulking data'});
           });
@@ -131,3 +109,82 @@ exports.bulk = async (req, res) => {
       }
   })
 };
+
+exports.bulkSetPassword = async (req, res) => {
+    upload(req,res, function (err) {
+        var exceltojson;
+        
+        if (err) {
+            res.json({message:err});
+
+            return;
+        }
+
+        /** Multer gives us file info in req.file object */
+        if (!req.file) {
+            res.json({message:"No file passed"});
+
+            return;
+        }
+
+        /** Check the extension of the incoming file and 
+         *  use the appropriate module
+         */
+        if (req.file.originalname.split('.')[req.file.originalname.split('.').length-1] === 'xlsx') {
+            exceltojson = xlsxtojson;
+        } else {
+            exceltojson = xlstojson;
+        }
+
+        try {
+            exceltojson({
+                input: req.file.path,
+                output: null,
+                lowerCaseHeaders:true
+            }, async (err,result) => {
+                if(err) {
+                    return res.json({message:err, data: null});
+                } 
+    
+                const endpoint = 'https://sso.digitalservice.jabarprov.go.id';
+                const headers = {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                };
+    
+                const body = querystring.stringify({
+                    grant_type: 'client_credentials',
+                    client_id: 'bulk-import-users-cli',
+                    client_secret: '97bf1bd8-b581-4a3f-a123-41c4f4198d3a'
+                });
+    
+                const login = await axios.post(`${endpoint}/auth/realms/master/protocol/openid-connect/token`, body, headers);
+    
+                const option = {
+                    headers: {
+                        Authorization: `Bearer ${login.data.access_token}`,
+                    },
+                };
+ 
+                const getUserKeycloak = await axios.get(`${endpoint}/auth/admin/realms/jabarprov/groups/7eccdad3-1d79-4eac-88da-9c4c1f73cd09/members`, option);
+                const bodyCredentials = {
+                    type: 'password',
+                    temporary: 'true',
+                    value: 'puspajabarjuara2021'
+                };
+
+                result.forEach(async (element, key) => {
+                    await getUserKeycloak.data.filter(async (user) => {
+                        if (element.email.trim().toLowerCase() === user.email.trim().toLowerCase()) {
+                            console.log(user.id);
+                            await axios.put(`${endpoint}/auth/admin/realms/jabarprov/users/${user.id}/reset-password`, bodyCredentials, option);
+                        }
+                    })
+                });
+    
+                res.json({ message: 'Success set users password'});
+                });
+        } catch (e){
+            res.json({message:"Excel file was damaged!"});
+        }
+    })
+  };
