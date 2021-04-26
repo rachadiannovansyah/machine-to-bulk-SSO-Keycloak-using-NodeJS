@@ -55,10 +55,11 @@ exports.bulk = async (req, res) => {
             if(err) {
                 return res.json({err_desc:err, data: null});
             } 
-            // console.log(JSON.stringify(result));
-            // res.json({data: result});
+            console.log(JSON.stringify(result));
+            res.json({data: result});
 
-            const endpoint = 'https://sso.digitalservice.jabarprov.go.id';
+            // const endpoint = 'https://sso.digitalservice.jabarprov.go.id';
+            const endpoint = 'https://keycloak.digitalservice.id';
             const headers = {
                 'Content-Type': 'application/x-www-form-urlencoded'
             };
@@ -86,9 +87,9 @@ exports.bulk = async (req, res) => {
                     enabled: true,
                     username: element.email.trim(),
                     attributes: {
-                        'city_code': '32.16',
+                        'city_code': '32.73',
                         'province_code': '32',
-                        'position_title': 'Relawan Puspa'
+                        'position_title': 'Admin Reservation'
                     }
                 };
 
@@ -96,16 +97,18 @@ exports.bulk = async (req, res) => {
                 let bodyCredentials = {
                     type: 'password',
                     temporary: 'true',
-                    value: 'puspajabarjuara2021'
+                    value: 'digiteamjuara2021'
                 };
                 await axios.put(createUser.headers.location + '/reset-password', bodyCredentials, option);
-                await axios.put(createUser.headers.location + '/groups/7eccdad3-1d79-4eac-88da-9c4c1f73cd09', null, option);
+                
+                let groupId = '8453e256-c784-4ee8-aba5-918439594883';
+                await axios.put(createUser.headers.location + `/groups/${groupId}`, null, option);
             });
 
             res.json({ message: 'Success bulking data'});
           });
       } catch (e){
-          res.json({err_desc:"Excel file was damaged!"});
+          res.json({err_desc: 'Excel file was damaged!'});
       }
   })
 };
